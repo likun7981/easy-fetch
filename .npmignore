@@ -1,0 +1,7 @@
+./dist
+./index.js
+./test
+./node_modules
+./.eslintignore
+./.eslintrc.js
+./.babelrc

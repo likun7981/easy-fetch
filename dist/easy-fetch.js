@@ -1,6 +1,8 @@
-'use strict';
-
-exports.__esModule = true;
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+	(factory((global.SimpleFetch = {})));
+}(this, (function (exports) { 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -147,11 +149,7 @@ var createRequest = function createRequest() {
   };
 };
 
-var request = exports.request = createRequest();
-
-exports.globalConfig = globalConfig;
-exports.createRequest = createRequest;
-
+var request = createRequest();
 
 function abortablePromise(fetchPromise) {
   var abortFn = null;
@@ -164,3 +162,11 @@ function abortablePromise(fetchPromise) {
   abortablePromise.abort = abortFn;
   return abortablePromise;
 }
+
+exports.request = request;
+exports.globalConfig = globalConfig;
+exports.createRequest = createRequest;
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+})));

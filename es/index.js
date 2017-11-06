@@ -3,8 +3,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 /**
  * @author: likun,
  * @description: 
- *  This tool class can only be used to receive and process json data, 
- *  other data please use fetch native
+ *  This tool add some hook and global config;
  * @example:
  *  import request from 'simple-fetch';
  *  const requestHandle = request('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
@@ -15,15 +14,17 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
  *  const requestHandle = reqest('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // Global config attrs: body, timeout, headers
  */
-import stringify from 'qs/lib/stringify';
+
+require('isomorphic-fetch');
 
 var noop = function noop() {};
 var configs = {};
+var globalKeys = ['body', 'timeout', 'headers', 'onSuccess', 'onComplete', 'successFilter', 'onError', 'onStart'];
 
 var globalConfig = function globalConfig() {
   var gconfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-  Object.keys(gconfig).forEach(function (key) {
+  globalKeys.forEach(function (key) {
     configs[key] = gconfig[key];
   });
 };
@@ -36,17 +37,17 @@ var createRequest = function createRequest() {
       _ref$timeout = _ref.timeout,
       timeout = _ref$timeout === undefined ? 5000 : _ref$timeout,
       _ref$onStart = _ref.onStart,
-      onStart = _ref$onStart === undefined ? noop : _ref$onStart,
+      onStart = _ref$onStart === undefined ? configs.onStart || noop : _ref$onStart,
       _ref$onComplete = _ref.onComplete,
-      onComplete = _ref$onComplete === undefined ? noop : _ref$onComplete,
+      onComplete = _ref$onComplete === undefined ? configs.onComplete || noop : _ref$onComplete,
       _ref$onSuccess = _ref.onSuccess,
-      onSuccess = _ref$onSuccess === undefined ? noop : _ref$onSuccess,
+      onSuccess = _ref$onSuccess === undefined ? configs.onSuccess || noop : _ref$onSuccess,
       _ref$onError = _ref.onError,
-      onError = _ref$onError === undefined ? noop : _ref$onError,
-      _ref$onSuccessFilter = _ref.onSuccessFilter,
-      onSuccessFilter = _ref$onSuccessFilter === undefined ? function (response) {
+      onError = _ref$onError === undefined ? configs.onError || noop : _ref$onError,
+      _ref$successFilter = _ref.successFilter,
+      successFilter = _ref$successFilter === undefined ? configs.successFilter || function (response) {
     return Promise.resolve(response);
-  } : _ref$onSuccessFilter;
+  } : _ref$successFilter;
 
   timeout = timeout || configs.timeout;
   var assignHeaders = configs.headers ? _extends({}, configs.headers, headers) : headers;
@@ -59,7 +60,7 @@ var createRequest = function createRequest() {
   return function (urlWithMethod) {
     var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-    var _ref2 = urlWithMethod.indexOf(' ') ? urlWithMethod.split(/\s+/) : ['GET', urlWithMethod],
+    var _ref2 = urlWithMethod.indexOf(' ') > 0 ? urlWithMethod.split(/\s+/) : ['GET', urlWithMethod],
         method = _ref2[0],
         url = _ref2[1];
 
@@ -72,7 +73,7 @@ var createRequest = function createRequest() {
       if (method.toUpperCase() !== 'GET') {
         options.body = JSON.stringify(assignBody);
       } else {
-        url += '?' + stringify(assignBody);
+        url += '?' + assignBody;
       }
     }
     var promise = new Promise(function (resolve, reject) {
@@ -80,7 +81,7 @@ var createRequest = function createRequest() {
       fetch(url, options).then(function (response) {
         if (response.ok) {
           var _headers = response.headers;
-          onSuccessFilter(response).then(function (result) {
+          successFilter(response).then(function (result) {
             onSuccess(result);
             onComplete(null, result);
             resolve({ result: result, headers: _headers });
@@ -88,7 +89,7 @@ var createRequest = function createRequest() {
             onError(error);
             onComplete(error);
             reject(error);
-          });
+          })['catch'](reject);
         } else {
           var error = new Error(response.statusText);
           onError(error);
@@ -99,32 +100,40 @@ var createRequest = function createRequest() {
         onError(error);
         onComplete(error);
         reject(error);
-      });
+      })['catch'](reject);
     });
     var requestPromise = {};
+
+    promise = abortablePromise(promise);
     requestPromise.success = function (fn) {
       fn = typeof fn === 'function' ? fn : noop;
-      promise.then(function (_ref3) {
+      promise = promise.then(function (_ref3) {
         var result = _ref3.result,
             headers = _ref3.headers;
 
         fn(result, headers);
-      }, noop);
+      });
       return requestPromise;
     };
     requestPromise.error = function (fn) {
       fn = typeof fn === 'function' ? fn : noop;
-      promise.then(noop, fn);
+      promise = promise.then(null, function (error) {
+        fn(error);
+      });
       return requestPromise;
     };
     requestPromise.complete = function (fn) {
       fn = typeof fn === 'function' ? fn : noop;
-      promise.then(function (result) {
+      promise = promise.then(function () {
+        var allOfIt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+        var result = allOfIt.result;
+
         fn(null, result);
       }, fn);
       return requestPromise;
     };
-    requestPromise.abort = abortablePromise(promise).abort;
+    requestPromise.abort = promise.abort;
+    requestPromise['catch'] = promise['catch'];
     if (timeout) {
       setTimeout(function () {
         requestPromise.abort('fetch timeout');
@@ -142,12 +151,10 @@ function abortablePromise(fetchPromise) {
   var abortFn = null;
   var abortPromise = new Promise(function (resolve, reject) {
     abortFn = function abortFn(message) {
-      reject(message || 'fetch aborted');
+      reject(new Error(message || 'fetch aborted'));
     };
   });
-  var abortablePromise = Promise.race([fetchPromise, abortPromise])['catch'](function (error) {
-    console.log(error.message);
-  });
+  var abortablePromise = Promise.race([fetchPromise, abortPromise]);
   abortablePromise.abort = abortFn;
   return abortablePromise;
 }
