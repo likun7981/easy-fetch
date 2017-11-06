@@ -3,7 +3,7 @@
  * @description: 
  *  This tool add some hook and global config;
  * @example:
- *  import { request, createRequest } from 'simple-fetch';
+ *  import { request, createRequest } from '@likun7981/easy-fetch';
  *  const requestHandle = request('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // You can cancel it 
  *  requestHandle.abort();
