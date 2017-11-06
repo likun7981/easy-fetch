@@ -3,17 +3,18 @@
  * @description: 
  *  This tool add some hook and global config;
  * @example:
- *  import request from 'simple-fetch';
+ *  import { request, createRequest } from 'simple-fetch';
  *  const requestHandle = request('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // You can cancel it 
  *  requestHandle.abort();
  *  // You want to config 
- *  const reqest = request.newInstance({ timeout: 3000 })
+ *  const reqest = createRequest({ timeout: 3000 })
  *  const requestHandle = reqest('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // Global config attrs: body, timeout, headers
  */
 
 require('isomorphic-fetch');
+const stringify = require('qs/lib/stringify');
 
 const noop = () => {};
 let configs = {};
@@ -81,7 +82,7 @@ const createRequest = (
       if (method.toUpperCase() !== 'GET') {
         options.body = JSON.stringify(assignBody);
       } else {
-        url += `?${assignBody}`;
+        url += `?${stringify(assignBody)}`;
       }
     }
     let promise = new Promise((resolve, reject) => {

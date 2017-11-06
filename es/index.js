@@ -5,17 +5,18 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
  * @description: 
  *  This tool add some hook and global config;
  * @example:
- *  import request from 'simple-fetch';
+ *  import { request, createRequest } from 'simple-fetch';
  *  const requestHandle = request('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // You can cancel it 
  *  requestHandle.abort();
  *  // You want to config 
- *  const reqest = request.newInstance({ timeout: 3000 })
+ *  const reqest = createRequest({ timeout: 3000 })
  *  const requestHandle = reqest('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // Global config attrs: body, timeout, headers
  */
 
 require('isomorphic-fetch');
+var stringify = require('qs/lib/stringify');
 
 var noop = function noop() {};
 var configs = {};
@@ -73,7 +74,7 @@ var createRequest = function createRequest() {
       if (method.toUpperCase() !== 'GET') {
         options.body = JSON.stringify(assignBody);
       } else {
-        url += '?' + assignBody;
+        url += '?' + stringify(assignBody);
       }
     }
     var promise = new Promise(function (resolve, reject) {
