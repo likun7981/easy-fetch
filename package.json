@@ -1,13 +1,13 @@
 {
   "name": "@likun7981/easy-fetch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "lib/index.js",
   "jsnext:main": "es/index.js",
   "module": "es/index.js",
   "typings": "./index.d.ts",
   "scripts": {
-    "clean":"rimraf lib dist es",
+    "clean": "rimraf lib dist es",
     "test": "cross-env BABEL_ENV=commonjs mocha --require babel-register -t 10000",
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel ./index.js --out-dir lib",
     "build:es": "cross-env BABEL_ENV=es babel ./index.js --out-dir es",
