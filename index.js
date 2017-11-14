@@ -29,13 +29,7 @@ const globalKeys = [
   'onStart'
 ];
 
-const globalConfig = (gconfig = {}) => {
-  globalKeys.forEach(key => {
-    configs[key] = gconfig[key];
-  });
-};
-
-const createRequest = (
+export const createRequest = (
   {
     headers = {},
     credentials,
@@ -157,9 +151,11 @@ const createRequest = (
   };
 };
 
-export const request = createRequest();
-
-export { globalConfig, createRequest };
+export const globalConfig = (gconfig = {}) => {
+  globalKeys.forEach(key => {
+    configs[key] = gconfig[key];
+  });
+};
 
 function abortablePromise(fetchPromise) {
   let abortFn = null;
