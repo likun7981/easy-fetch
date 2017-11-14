@@ -11,7 +11,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
  * @description: 
  *  This tool add some hook and global config;
  * @example:
- *  import { request, createRequest } from 'simple-fetch';
+ *  import { request, createRequest } from '@likun7981/easy-fetch';
  *  const requestHandle = request('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // You can cancel it 
  *  requestHandle.abort();
@@ -27,14 +27,6 @@ var stringify = require('qs/lib/stringify');
 var noop = function noop() {};
 var configs = {};
 var globalKeys = ['body', 'timeout', 'headers', 'onSuccess', 'onComplete', 'successFilter', 'onError', 'onStart'];
-
-var globalConfig = function globalConfig() {
-  var gconfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-  globalKeys.forEach(function (key) {
-    configs[key] = gconfig[key];
-  });
-};
 
 var createRequest = function createRequest() {
   var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -150,7 +142,13 @@ var createRequest = function createRequest() {
   };
 };
 
-var request = createRequest();
+var globalConfig = function globalConfig() {
+  var gconfig = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+  globalKeys.forEach(function (key) {
+    configs[key] = gconfig[key];
+  });
+};
 
 function abortablePromise(fetchPromise) {
   var abortFn = null;
@@ -164,9 +162,8 @@ function abortablePromise(fetchPromise) {
   return abortablePromise;
 }
 
-exports.request = request;
-exports.globalConfig = globalConfig;
 exports.createRequest = createRequest;
+exports.globalConfig = globalConfig;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 

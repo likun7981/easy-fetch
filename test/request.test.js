@@ -1,7 +1,9 @@
 const nock = require('nock');
-const { request } = require('../index');
+const { createRequest } = require('../index');
 const { expect } = require('chai');
 const { host, paths, urls, goodResponse } = require('./helper');
+
+const request = createRequest();
 
 describe('request', () => {
   it('should be defined', () => {
