@@ -1,6 +1,6 @@
 {
   "name": "@likun7981/easy-fetch",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "lib/index.js",
   "jsnext:main": "es/index.js",
