@@ -2,14 +2,14 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 /**
  * @author: likun,
- * @description: 
+ * @description:
  *  This tool add some hook and global config;
  * @example:
  *  import { request, createRequest } from '@likun7981/easy-fetch';
  *  const requestHandle = request('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
- *  // You can cancel it 
+ *  // You can cancel it
  *  requestHandle.abort();
- *  // You want to config 
+ *  // You want to config
  *  const reqest = createRequest({ timeout: 3000 })
  *  const requestHandle = reqest('GET http://www.xxx.com',{param:1}).success(()=>{}).error(()=>{})
  *  // Global config attrs: body, timeout, headers
@@ -111,7 +111,7 @@ export var createRequest = function createRequest() {
     requestPromise.error = function (fn) {
       fn = typeof fn === 'function' ? fn : noop;
       promise = promise.then(null, function (error) {
-        fn(error);
+        if (!(error && error.isAbort)) fn(error);
       });
       return requestPromise;
     };
@@ -122,7 +122,11 @@ export var createRequest = function createRequest() {
         var result = allOfIt.result;
 
         fn(null, result);
-      }, fn);
+      }, function (error) {
+        if (!(error && error.isAbort)) {
+          fn(error);
+        }
+      });
       return requestPromise;
     };
     requestPromise.abort = promise.abort;
@@ -148,7 +152,9 @@ function abortablePromise(fetchPromise) {
   var abortFn = null;
   var abortPromise = new Promise(function (resolve, reject) {
     abortFn = function abortFn(message) {
-      reject(new Error(message || 'fetch aborted'));
+      var cancelError = new Error(message || 'fetch aborted');
+      cancelError.isAbort = true;
+      reject(cancelError);
     };
   });
   var abortablePromise = Promise.race([fetchPromise, abortPromise]);

@@ -28,6 +28,7 @@ const globalKeys = [
   'onError',
   'onStart'
 ];
+let timeoutHandle;
 
 export const createRequest = (
   {
@@ -42,7 +43,7 @@ export const createRequest = (
       (response => Promise.resolve(response))
   } = {}
 ) => {
-  timeout = timeout || configs.timeout;
+  timeout = typeof timeout !== 'undefined' ? timeout : configs.timeout;
   const assignHeaders = configs.headers
     ? {
         ...configs.headers,
@@ -79,11 +80,14 @@ export const createRequest = (
         url += `?${stringify(assignBody)}`;
       }
     }
+    let abortable;
     let promise = new Promise((resolve, reject) => {
       onStart();
-      fetch(url, options)
+      abortable = abortablePromise(fetch(url, options));
+      abortable
         .then(
           response => {
+            clearTimeout(timeoutHandle);
             if (response.ok) {
               const headers = response.headers;
               successFilter(response)
@@ -108,8 +112,11 @@ export const createRequest = (
             }
           },
           error => {
-            onError(error);
-            onComplete(error);
+            clearTimeout(timeoutHandle);
+            if (!(error && error.isAbort)) {
+              onError(error);
+              onComplete(error);
+            }
             reject(error);
           }
         )
@@ -117,7 +124,6 @@ export const createRequest = (
     });
     const requestPromise = {};
 
-    promise = abortablePromise(promise);
     requestPromise.success = fn => {
       fn = typeof fn === 'function' ? fn : noop;
       promise = promise.then(({ result, headers }) => {
@@ -147,10 +153,11 @@ export const createRequest = (
       );
       return requestPromise;
     };
-    requestPromise.abort = promise.abort;
+    requestPromise.abort = abortable.abort;
     requestPromise.catch = promise.catch;
-    if (timeout) {
-      setTimeout(() => {
+    if (typeof timeout !== 'undefined') {
+      timeoutHandle = setTimeout(() => {
+        console.log('timeout');
         requestPromise.abort('fetch timeout');
       }, timeout);
     }
@@ -168,8 +175,15 @@ function abortablePromise(fetchPromise) {
   let abortFn = null;
   const abortPromise = new Promise(function(resolve, reject) {
     abortFn = function(message) {
-      const cancelError = new Error(message || 'fetch aborted');
-      cancelError.isAbort = true;
+      const cancelError = new Error(message || 'fetch canceled');
+      if (!message) {
+        // isAbort
+        cancelError.isAbort = true;
+        console.warn(cancelError.message);
+        clearTimeout(timeoutHandle);
+      } else {
+        cancelError.isTimeout = true;
+      }
       reject(cancelError);
     };
   });
