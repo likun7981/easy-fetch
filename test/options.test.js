@@ -1,4 +1,4 @@
-const { host, paths, urls } = require('./helper');
+const { host, paths, urls, doneHandle } = require('./helper');
 const nock = require('nock');
 const { createRequest } = require('../index');
 const { expect } = require('chai');
@@ -17,8 +17,9 @@ describe('options', () => {
     });
     request(urls.success).success(response => {
       response.text().then(result => {
-        expect(result).equal('basic');
-        done();
+        doneHandle(() => {
+          expect(result).equal('basic');
+        }, done);
       });
     });
   });
@@ -30,10 +31,10 @@ describe('options', () => {
     const request = createRequest({
       timeout: 3000
     });
-    request(urls.delay)
-      .error(error => {
+    request(urls.delay).error(error => {
+      doneHandle(() => {
         expect(error.message).equal('fetch timeout');
-      })
-      .complete(done);
+      }, done);
+    });
   });
 });

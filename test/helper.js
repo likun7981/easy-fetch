@@ -13,4 +13,19 @@ export const urls = {
 
 export const goodResponse = 'Hello World';
 
-
+export const doneHandle = (expect, done, e) => {
+  try {
+    expect();
+  } catch (e) {
+    if (e.isTestError) return done(e);
+  }
+  done();
+};
+export const errorHandle = expect => {
+  try {
+    expect();
+  } catch (e) {
+    e.isTestError = true;
+    throw e;
+  }
+};

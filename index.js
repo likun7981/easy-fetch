@@ -133,7 +133,7 @@ export const createRequest = (
     };
     requestPromise.error = fn => {
       fn = typeof fn === 'function' ? fn : noop;
-        promise.then(null, error => {
+      promise.then(null, error => {
         if (!(error && error.isAbort)) fn(error);
       });
       return requestPromise;
