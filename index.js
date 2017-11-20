@@ -126,29 +126,27 @@ export const createRequest = (
 
     requestPromise.success = fn => {
       fn = typeof fn === 'function' ? fn : noop;
-      promise = promise.then(({ result, headers }) => {
+      promise.then(({ result, headers }) => {
         fn(result, headers);
-      });
+      }, noop);
       return requestPromise;
     };
     requestPromise.error = fn => {
       fn = typeof fn === 'function' ? fn : noop;
-      promise = promise.then(null, error => {
+        promise.then(null, error => {
         if (!(error && error.isAbort)) fn(error);
       });
       return requestPromise;
     };
     requestPromise.complete = fn => {
       fn = typeof fn === 'function' ? fn : noop;
-      promise = promise.then(
+      promise.then(
         (allOfIt = {}) => {
           const { result } = allOfIt;
           fn(null, result);
         },
         error => {
-          if (!(error && error.isAbort)) {
-            fn(error);
-          }
+          if (!(error && error.isAbort)) fn(error);
         }
       );
       return requestPromise;
@@ -157,7 +155,6 @@ export const createRequest = (
     requestPromise.catch = promise.catch;
     if (typeof timeout !== 'undefined') {
       timeoutHandle = setTimeout(() => {
-        console.log('timeout');
         requestPromise.abort('fetch timeout');
       }, timeout);
     }
@@ -179,7 +176,7 @@ function abortablePromise(fetchPromise) {
       if (!message) {
         // isAbort
         cancelError.isAbort = true;
-        console.warn(cancelError.message);
+        console.warn('message');
         clearTimeout(timeoutHandle);
       } else {
         cancelError.isTimeout = true;

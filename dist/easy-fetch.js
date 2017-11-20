@@ -27,6 +27,7 @@ var stringify = require('qs/lib/stringify');
 var noop = function noop() {};
 var configs = {};
 var globalKeys = ['body', 'timeout', 'headers', 'onSuccess', 'onComplete', 'successFilter', 'onError', 'onStart'];
+var timeoutHandle = void 0;
 
 var createRequest = function createRequest() {
   var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
@@ -48,7 +49,7 @@ var createRequest = function createRequest() {
     return Promise.resolve(response);
   } : _ref$successFilter;
 
-  timeout = timeout || configs.timeout;
+  timeout = typeof timeout !== 'undefined' ? timeout : configs.timeout;
   var assignHeaders = configs.headers ? _extends({}, configs.headers, headers) : headers;
   var options = _extends({}, configs, {
     headers: assignHeaders
@@ -75,9 +76,12 @@ var createRequest = function createRequest() {
         url += '?' + stringify(assignBody);
       }
     }
+    var abortable = void 0;
     var promise = new Promise(function (resolve, reject) {
       onStart();
-      fetch(url, options).then(function (response) {
+      abortable = abortablePromise(fetch(url, options));
+      abortable.then(function (response) {
+        clearTimeout(timeoutHandle);
         if (response.ok) {
           var _headers = response.headers;
           successFilter(response).then(function (result) {
@@ -96,14 +100,16 @@ var createRequest = function createRequest() {
           reject(error);
         }
       }, function (error) {
-        onError(error);
-        onComplete(error);
+        clearTimeout(timeoutHandle);
+        if (!(error && error.isAbort)) {
+          onError(error);
+          onComplete(error);
+        }
         reject(error);
       })['catch'](reject);
     });
     var requestPromise = {};
 
-    promise = abortablePromise(promise);
     requestPromise.success = function (fn) {
       fn = typeof fn === 'function' ? fn : noop;
       promise = promise.then(function (_ref3) {
@@ -135,10 +141,11 @@ var createRequest = function createRequest() {
       });
       return requestPromise;
     };
-    requestPromise.abort = promise.abort;
+    requestPromise.abort = abortable.abort;
     requestPromise['catch'] = promise['catch'];
-    if (timeout) {
-      setTimeout(function () {
+    if (typeof timeout !== 'undefined') {
+      timeoutHandle = setTimeout(function () {
+        console.log('timeout');
         requestPromise.abort('fetch timeout');
       }, timeout);
     }
@@ -158,8 +165,15 @@ function abortablePromise(fetchPromise) {
   var abortFn = null;
   var abortPromise = new Promise(function (resolve, reject) {
     abortFn = function abortFn(message) {
-      var cancelError = new Error(message || 'fetch aborted');
-      cancelError.isAbort = true;
+      var cancelError = new Error(message || 'fetch canceled');
+      if (!message) {
+        // isAbort
+        cancelError.isAbort = true;
+        console.warn(cancelError.message);
+        clearTimeout(timeoutHandle);
+      } else {
+        cancelError.isTimeout = true;
+      }
       reject(cancelError);
     };
   });
