@@ -176,7 +176,7 @@ function abortablePromise(fetchPromise) {
       if (!message) {
         // isAbort
         cancelError.isAbort = true;
-        console.warn('message');
+        console.warn(cancelError.message);
         clearTimeout(timeoutHandle);
       } else {
         cancelError.isTimeout = true;
@@ -185,6 +185,13 @@ function abortablePromise(fetchPromise) {
     };
   });
   const abortablePromise = Promise.race([fetchPromise, abortPromise]);
-  abortablePromise.abort = abortFn;
+  abortablePromise.abort = (message, fn = noop) => {
+    if(typeof message === 'function'){
+      fn = message;
+      message = null;
+    }
+    fn();
+    abortFn(message);
+  };
   return abortablePromise;
 }
