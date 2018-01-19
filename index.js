@@ -69,9 +69,7 @@ export const createRequest = (
           ...params
         }
       : params;
-    if (method !== 'GET') {
-      options.method = method;
-    }
+    options.method = method;
     assignBody = JSON.parse(JSON.stringify(assignBody));
     if (Object.keys(assignBody).length) {
       if (method.toUpperCase() !== 'GET') {
